@@ -104,7 +104,7 @@ public class TicketListForm extends javax.swing.JFrame {
         btnDelete = new javax.swing.JButton();
         btnRefresh = new javax.swing.JButton();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
         tblTickets.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -120,6 +120,7 @@ public class TicketListForm extends javax.swing.JFrame {
         jScrollPane1.setViewportView(tblTickets);
 
         btnAdd.setText("Agregar");
+        btnAdd.addActionListener(this::btnAddActionPerformed);
 
         btnEdit.setText("Editar");
         btnEdit.addActionListener(this::btnEditActionPerformed);
@@ -165,7 +166,8 @@ public class TicketListForm extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditActionPerformed
-        // TODO add your handling code here:
+        Ticket ticket = getSelectedTicket();
+    if (ticket != null) openForm(ticket);
     }//GEN-LAST:event_btnEditActionPerformed
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
@@ -205,6 +207,22 @@ public class TicketListForm extends javax.swing.JFrame {
         loadTickets();
     }//GEN-LAST:event_btnRefreshActionPerformed
 
+    
+    
+    private void btnAddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAddActionPerformed
+        openForm(null);
+    }//GEN-LAST:event_btnAddActionPerformed
+
+    private void openForm(Ticket ticket) {
+    TicketForm form = new TicketForm(ticket);
+    form.addWindowListener(new java.awt.event.WindowAdapter() {
+        @Override
+        public void windowClosed(java.awt.event.WindowEvent e) {
+            loadTickets();
+        }
+    });
+    form.setVisible(true);
+}
     /**
      * @param args the command line arguments
      */

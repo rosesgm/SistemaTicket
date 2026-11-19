@@ -3,6 +3,7 @@
  */
 
 package mx.itson.sistematicket;
+import mx.itson.sistematicket.views.TicketListForm;
 
 /**
  *
@@ -11,6 +12,6 @@ package mx.itson.sistematicket;
 public class SistemaTicket {
 
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+        java.awt.EventQueue.invokeLater(() -> new TicketListForm().setVisible(true));
     }
 }
