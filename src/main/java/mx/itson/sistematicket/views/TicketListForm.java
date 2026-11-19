@@ -10,8 +10,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+import mx.itson.sistematicket.entities.Ticket;
 import mx.itson.sistematicket.entities.TicketListResponse;
+import mx.itson.sistematicket.entities.TicketResponse;
 
 
 
@@ -22,7 +26,7 @@ import mx.itson.sistematicket.entities.TicketListResponse;
 public class TicketListForm extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(TicketListForm.class.getName());
-
+    private List<Ticket> tickets;
     /**
      * Creates new form TicketListForm
      */
@@ -37,7 +41,37 @@ public class TicketListForm extends javax.swing.JFrame {
         HttpResponse <String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         Gson gson = new Gson();
         TicketListResponse result = gson.fromJson(response.body(), TicketListResponse.class);
-        System.out.println(result.getMessage());
+        if (!result.isSuccess()) {
+            JOptionPane.showMessageDialog(this, result.getMessage());
+            return;
+        }
+
+        tickets = result.getData();
+
+        DefaultTableModel model = new DefaultTableModel() {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; //evita que se editen las celdas al dar doble clic
+            }
+        };
+
+        model.addColumn("ID");
+        model.addColumn("Título");
+        model.addColumn("Estado");
+        model.addColumn("Prioridad");
+        model.addColumn("Fecha");
+
+        for (Ticket ticket : tickets) {
+            model.addRow(new Object[]{
+                ticket.getId(),
+                ticket.getTitle(),
+                ticket.getStatus(),
+                ticket.getPriority(),
+                ticket.getCreated_at()
+            });
+        }
+
+        tblTickets.setModel(model);
     }catch (IOException ex){
     JOptionPane.showMessageDialog(this, "No se pudieron cargar los tickets");
     }catch (InterruptedException ex){
@@ -45,6 +79,14 @@ public class TicketListForm extends javax.swing.JFrame {
     }
 }
     
+    private Ticket getSelectedTicket() {
+        int row = tblTickets.getSelectedRow();
+        if (row == -1) {
+            JOptionPane.showMessageDialog(this, "Selecciona un ticket de la tabla");
+            return null;
+        }
+        return tickets.get(row);
+    }
     
     /**
      * This method is called from within the constructor to initialize the form.
@@ -83,8 +125,10 @@ public class TicketListForm extends javax.swing.JFrame {
         btnEdit.addActionListener(this::btnEditActionPerformed);
 
         btnDelete.setText("Eliminar");
+        btnDelete.addActionListener(this::btnDeleteActionPerformed);
 
         btnRefresh.setText("Actualizar");
+        btnRefresh.addActionListener(this::btnRefreshActionPerformed);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -123,6 +167,43 @@ public class TicketListForm extends javax.swing.JFrame {
     private void btnEditActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_btnEditActionPerformed
+
+    private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
+        Ticket ticket = getSelectedTicket();
+        if (ticket == null) return;
+
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "¿Eliminar el ticket #" + ticket.getId() + "?",
+            "Confirmar eliminación",
+            JOptionPane.YES_NO_OPTION
+        );
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://127.0.0.1:8000/tickets/" + ticket.getId()))
+                .DELETE()
+                .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            Gson gson = new Gson();
+            TicketResponse result = gson.fromJson(response.body(), TicketResponse.class);
+            JOptionPane.showMessageDialog(this, result.getMessage());
+
+            if (result.isSuccess()) {
+                loadTickets();
+            }
+        } catch (IOException | InterruptedException ex) {
+            JOptionPane.showMessageDialog(this, "No se pudo conectar con la API");
+        }
+    }//GEN-LAST:event_btnDeleteActionPerformed
+
+    private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
+        loadTickets();
+    }//GEN-LAST:event_btnRefreshActionPerformed
 
     /**
      * @param args the command line arguments
